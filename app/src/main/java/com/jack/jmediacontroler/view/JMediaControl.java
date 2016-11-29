@@ -15,9 +15,11 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -26,8 +28,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.animation.Animation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -38,6 +42,8 @@ import java.lang.ref.WeakReference;
 import java.util.Formatter;
 import java.util.Locale;
 
+import static com.jack.jmediacontroler.R.anim.preplay;
+
 /***********
  * author: jackzhous
  * file: JMediaControl.java
@@ -46,7 +52,7 @@ import java.util.Locale;
  ************/
 public class JMediaControl extends FrameLayout {
 
-    private static final String     TAG = "JMediaControl";
+    private static final String     TAG = "jackzhous -- JMediaControl";
     private static final int        FADE_OUT = 1;
     private static final int        SHOW_PROGRESS = 2;
     private static final int        DEFAULTTIMEOUT = 3000;
@@ -66,9 +72,11 @@ public class JMediaControl extends FrameLayout {
     private boolean                 mIsDragging;
     private boolean                 mFromXml;
     private boolean                 mUseFastForward;
-    private boolean                 mIsPause;
+    private boolean                 mIsPause = true;
     private StringBuilder           mStrBuilder;
     private Formatter               mFormatter;
+    private AnimationDrawable       mLoadingAnimation;
+    private boolean                 mIsLoadingComplelte;
 
     public JMediaControl(Activity context) {
         this(context, true);
@@ -106,6 +114,16 @@ public class JMediaControl extends FrameLayout {
      */
     public void setAnchorView(ViewGroup viewGroup){
         mAnchorVGroup = viewGroup;
+    }
+
+
+    /**
+     * 绑定控制界面到surfaceview
+     */
+    public void bindingContrlView(){
+        if(mAnchorVGroup == null){
+            return;
+        }
         FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -114,6 +132,47 @@ public class JMediaControl extends FrameLayout {
 
         View view = createCtrlView();
         addView(view, frameParams);
+
+        show(DEFAULTTIMEOUT);
+    }
+
+    public void preLoadingAnimation(){
+        if(mAnchorVGroup == null){
+            return;
+        }
+        FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        );
+        removeAllViews();
+
+        View view = createLoadingAnimation();
+        addView(view, frameParams);
+        mAnchorVGroup.addView(this, frameParams);
+        mLoadingAnimation.start();
+
+    }
+
+
+    public void stopLoadingAnimation(){
+        if(mLoadingAnimation != null){
+            mIsLoadingComplelte = true;
+            mLoadingAnimation.stop();
+            mAnchorVGroup.removeView(this);
+            mLoadingAnimation = null;
+        }
+    }
+
+    private View createLoadingAnimation(){
+        LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+        View view = inflater.inflate(R.layout.loading, null);
+
+        ImageView loadingView = (ImageView)view.findViewById(R.id.loadingAnimation);
+
+        mLoadingAnimation = (AnimationDrawable)loadingView.getDrawable();
+
+        return view;
     }
 
     /**
@@ -169,11 +228,8 @@ public class JMediaControl extends FrameLayout {
     private OnClickListener mFullscreenListener = new OnClickListener() {
         @Override
         public void onClick(View view) {
-            int screenOrientation = mContext.getRequestedOrientation();
-            if(screenOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
-                mContext.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            }else{
-                mContext.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            if(mPlayerCtr != null){
+                mPlayerCtr.fullScreen();
             }
         }
     };
@@ -185,6 +241,7 @@ public class JMediaControl extends FrameLayout {
         public void onClick(View view) {
             mIsPause = !mIsPause;
             doPauseOrResume();
+            updateBtnPauseStatus();
         }
     };
 
@@ -236,7 +293,9 @@ public class JMediaControl extends FrameLayout {
      * 3 seconds of inactivity.
      */
     public void show(){
-        show(DEFAULTTIMEOUT);
+        if(mIsLoadingComplelte){
+            show(DEFAULTTIMEOUT);
+        }
     }
 
     private void show(int timeout) {
@@ -257,11 +316,13 @@ public class JMediaControl extends FrameLayout {
             mAnchorVGroup.addView(this, tlp);
             mIsShowing = true;
         }
-        //updatePausePlay();
-        //updateFullScreen();
 
         mHandler.sendEmptyMessage(SHOW_PROGRESS);
 
+        //暂停状态不掩藏进度条等
+        if(mIsPause && !mPlayerCtr.isComplete()){
+            return;
+        }
         Message msg = mHandler.obtainMessage(FADE_OUT);
         if (timeout != 0) {
             mHandler.removeMessages(FADE_OUT);
@@ -327,6 +388,10 @@ public class JMediaControl extends FrameLayout {
         }
         if(mCurTime != null){
             mCurTime.setText(stringForTime(position));
+            if(mPlayerCtr.isComplete()){
+                mCurTime.setText(stringForTime(duration));
+                mProgress.setProgress(1000);
+            }
         }
         return position;
     }
@@ -343,6 +408,22 @@ public class JMediaControl extends FrameLayout {
         }else{
             mPlayerCtr.start();
         }
+    }
+
+    private void updateBtnPauseStatus(){
+        if(mPlayerCtr == null){
+            return;
+        }
+        if(mIsPause){
+            mHandler.removeMessages(FADE_OUT);
+            mBtnPause.setImageDrawable(getResources().getDrawable(R.drawable.ic_tv_play));
+            mBtnPause1.setImageDrawable(getResources().getDrawable(R.drawable.ic_portrait_play));
+        }else{
+            mHandler.sendEmptyMessageDelayed(FADE_OUT, DEFAULTTIMEOUT);
+            mBtnPause.setImageDrawable(getResources().getDrawable(R.drawable.ic_tv_stop));
+            mBtnPause1.setImageDrawable(getResources().getDrawable(R.drawable.ic_portrait_stop));
+        }
+        mHandler.sendEmptyMessage(SHOW_PROGRESS);
     }
 
     /**
@@ -405,18 +486,19 @@ public class JMediaControl extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        show(DEFAULTTIMEOUT);
+        show();
         return true;
     }
 
     @Override
     public boolean onTrackballEvent(MotionEvent event) {
-        show(DEFAULTTIMEOUT);
+        show();
         return false;
     }
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        Log.i(TAG, "dispatchKeyEvent");
         if(mPlayerCtr == null){
             return true;
         }
@@ -472,6 +554,7 @@ public class JMediaControl extends FrameLayout {
         void    seekTo(int pos);
         boolean isPlaying();
         int     getBufPercent();
+        boolean isComplete();
         boolean canPause();
         boolean canSeekBackward();
         boolean canSeekForward();
@@ -497,22 +580,19 @@ public class JMediaControl extends FrameLayout {
 
 
         private void myHandlerMsg(JMediaControl control, Message msg){
-            int pos;
             switch (msg.what){
                 case FADE_OUT:
-                    control.hide();
+                    if(!control.mPlayerCtr.isComplete()){
+                        control.hide();
+                    }
                     break;
 
+                //更新显示进度条
                 case SHOW_PROGRESS:
-                    if(control.mPlayerCtr.isPlaying()){
-                        pos = control.setProgress();
-                    }else{
-                        return;
-                    }
-
-                    if(!control.mIsDragging && control.mIsShowing && control.mPlayerCtr.isPlaying()){
+                    control.setProgress();
+                    if(!control.mIsDragging && control.mIsShowing && !control.mPlayerCtr.isComplete()){
                         msg = obtainMessage(SHOW_PROGRESS);
-                        sendMessageDelayed(msg, 1000 - (pos % 1000));
+                        sendMessageDelayed(msg, 1500);
                     }
                     break;
             }
