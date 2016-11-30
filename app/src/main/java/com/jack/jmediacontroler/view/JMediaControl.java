@@ -68,6 +68,7 @@ public class JMediaControl extends FrameLayout {
     private Formatter               mFormatter;
     private AnimationDrawable       mLoadingAnimation;
     private boolean                 mIsLoadingComplelte;
+    private LayoutInflater          mInflater;
 
     public JMediaControl(Activity context) {
         this(context, true);
@@ -80,20 +81,59 @@ public class JMediaControl extends FrameLayout {
         mContext = context;
         mUseFastForward = true;
         mFromXml = true;
+        init();
     }
 
     public JMediaControl(Activity context, boolean useFastForward) {
         super(context);
         mContext = context;
         mUseFastForward = useFastForward;
+        init();
     }
 
-    public void removeHandlerCallback(){
+    private void init(){
+        mInflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mStrBuilder = new StringBuilder();
+        mFormatter = new Formatter(mStrBuilder, Locale.getDefault());           //格式化 区域位置
+    }
+
+    public void recycleSelf(){
         if(null != mHandler){
             mHandler.removeCallbacksAndMessages(null);
             mHandler = null;
         }
+        removeAllViews();
+        if(mAnchorVGroup != null){
+            mAnchorVGroup.removeView(this);
+        }
+        cancelViewListener();
+        mAnchorVGroup = null;
+        mContext = null;
+        mPlayerCtr = null;
     }
+
+    /**
+     * 取消监听，因为同一个listener持有许多组件的引用（setclick），
+     * 而且listener持有外部引用，导致不用的组件就无法释放
+     */
+    private void cancelViewListener(){
+        if(mBtnPause1 != null && mBtnPause != null){
+            mBtnPause1.setOnClickListener(null);
+            mBtnPause.setOnClickListener(null);
+        }
+
+        if(mBtnFullscreen != null){
+            mBtnFullscreen.setOnClickListener(null);
+            mBtnFullscreen = null;
+        }
+
+        if(mSeekBar != null){
+            SeekBar bar = (SeekBar) mSeekBar;
+            bar.setOnSeekBarChangeListener(null);
+            mSeekBar = null;
+        }
+    }
+
 
     public void setmPlayerCtr(ControlOper mPlayerCtr) {
         this.mPlayerCtr = mPlayerCtr;
@@ -105,7 +145,6 @@ public class JMediaControl extends FrameLayout {
      */
     public void setAnchorView(ViewGroup viewGroup){
         mAnchorVGroup = viewGroup;
-
     }
 
 
@@ -119,7 +158,8 @@ public class JMediaControl extends FrameLayout {
         mAnchorVGroup.removeView(this);
         FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
         );
         removeAllViews();
         if(mCtrlView == null){
@@ -139,7 +179,8 @@ public class JMediaControl extends FrameLayout {
         mAnchorVGroup.removeView(this);
         FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
         );
         removeAllViews();
         if(mProgressView == null){
@@ -176,9 +217,8 @@ public class JMediaControl extends FrameLayout {
     }
 
     private void createProgessView(){
-        LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        mProgressView = inflater.inflate(R.layout.progress, null);
+        mProgressView = mInflater.inflate(R.layout.progress, null);
 
         mProgressBar = (ProgressBar)mProgressView.findViewById(R.id.progress);
 
@@ -192,9 +232,8 @@ public class JMediaControl extends FrameLayout {
      * @return
      */
     private void createLoadingAnimation(){
-        LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        mLoadingView  = inflater.inflate(R.layout.loading, null);
+        mLoadingView  = mInflater.inflate(R.layout.loading, null);
 
         ImageView loadingView = (ImageView)mLoadingView.findViewById(R.id.loadingAnimation);
 
@@ -207,9 +246,8 @@ public class JMediaControl extends FrameLayout {
      * @return
      */
     private View createCtrlView(){
-        LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        mCtrlView = inflater.inflate(R.layout.controller, null);
+        mCtrlView = mInflater.inflate(R.layout.controller, null);
 
         initCtrView(mCtrlView);
 
@@ -247,8 +285,6 @@ public class JMediaControl extends FrameLayout {
 
         mEndTime = (TextView) view.findViewById(R.id.time);
         mCurTime = (TextView) view.findViewById(R.id.time_current);
-        mStrBuilder = new StringBuilder();
-        mFormatter = new Formatter(mStrBuilder, Locale.getDefault());           //格式化 区域位置
     }
 
     //===============================控制栏各个按钮监听===============================================
@@ -260,8 +296,6 @@ public class JMediaControl extends FrameLayout {
             }
         }
     };
-
-
 
     private OnClickListener mPauseClickListener = new OnClickListener() {
         @Override
@@ -329,7 +363,6 @@ public class JMediaControl extends FrameLayout {
             //先移除掉默认显示的进度条
             if(mIsDefaultProgressShowing){
                 mAnchorVGroup.removeView(this);
-                mProgressView = null;
                 mIsDefaultProgressShowing = false;
             }
             addCtrViewToMediaView();
@@ -366,7 +399,7 @@ public class JMediaControl extends FrameLayout {
 
             FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
                     Gravity.BOTTOM
             );
 
@@ -386,7 +419,7 @@ public class JMediaControl extends FrameLayout {
 
             FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
                     Gravity.BOTTOM
             );
 
@@ -444,7 +477,7 @@ public class JMediaControl extends FrameLayout {
                 progressBar.setProgress((int)pos);                //拖拽的显示到进度条上去
             }
             if(mIsDefaultProgressShowing){                          //默认显示下不在设计耳机
-                Log.i(TAG, "pos " + (1000L * position / duration));
+                progressBar.setSecondaryProgress(0);
                 return;
             }
             int percent = mPlayerCtr.getBufPercent();
@@ -522,7 +555,6 @@ public class JMediaControl extends FrameLayout {
 
         try{
             mAnchorVGroup.removeView(this);
-            mCtrlView = null;
             addDefaultProgessToMediaView();
             if(mHandler != null){
                 mHandler.removeMessages(SHOW_SEEKBAR);

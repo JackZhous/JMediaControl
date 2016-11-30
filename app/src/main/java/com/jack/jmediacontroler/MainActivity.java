@@ -185,7 +185,7 @@ public class MainActivity extends Activity {
     }
 
     private void releaseMediaPlayer(){
-        jMediaControl.removeHandlerCallback();
+        jMediaControl.recycleSelf();
         if(mPlayer != null){
             mPlayer.stop();
             mPlayer.release();
@@ -196,7 +196,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        jMediaControl.show();
+        //jMediaControl.show();
         return true;
     }
 
