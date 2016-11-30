@@ -1,20 +1,8 @@
-/*
- *         Copyright (C) 2016-2017 宙斯
- *         All rights reserved
- *
- *        filename :Class4
- *        description :
- *
- *         created by jackzhous at  11/07/2016 12:12:12
- *         http://blog.csdn.net/jackzhouyu
- */
-
 package com.jack.jmediacontroler.view;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.ActivityInfo;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Handler;
 import android.os.Message;
@@ -28,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.view.animation.Animation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -42,8 +29,6 @@ import java.lang.ref.WeakReference;
 import java.util.Formatter;
 import java.util.Locale;
 
-import static com.jack.jmediacontroler.R.anim.preplay;
-
 /***********
  * author: jackzhous
  * file: JMediaControl.java
@@ -54,11 +39,15 @@ public class JMediaControl extends FrameLayout {
 
     private static final String     TAG = "jackzhous -- JMediaControl";
     private static final int        FADE_OUT = 1;
-    private static final int        SHOW_PROGRESS = 2;
+    private static final int        SHOW_SEEKBAR = 2;
+    private static final int        SHOW_PROGRESSBAR = 3;
     private static final int        DEFAULTTIMEOUT = 3000;
+    private static final int        MAX_PROGRESS = 1000;
 
     private Handler                 mHandler = new MyHandler(this);
-    private View                    mRootView;
+    private View                    mCtrlView;
+    private View                    mProgressView;
+    private View                    mLoadingView;
     private Activity                mContext;
     private ControlOper             mPlayerCtr;
     private ViewGroup               mAnchorVGroup;
@@ -67,8 +56,10 @@ public class JMediaControl extends FrameLayout {
     private ImageButton             mBtnPause1;
     private TextView                mCurTime;
     private TextView                mEndTime;
-    private ProgressBar             mProgress;
-    private boolean                 mIsShowing;
+    private ProgressBar             mSeekBar;                                                       //控制视图中的进度条
+    private ProgressBar             mProgressBar;                                                   //默认显示IDE进度条
+    private boolean                 mIsCtlShowing;
+    private boolean                 mIsDefaultProgressShowing;
     private boolean                 mIsDragging;
     private boolean                 mFromXml;
     private boolean                 mUseFastForward;
@@ -85,7 +76,7 @@ public class JMediaControl extends FrameLayout {
     public JMediaControl(Activity context, AttributeSet attrs) {
         super(context, attrs);
 
-        mRootView = null;
+        mCtrlView = null;
         mContext = context;
         mUseFastForward = true;
         mFromXml = true;
@@ -114,29 +105,50 @@ public class JMediaControl extends FrameLayout {
      */
     public void setAnchorView(ViewGroup viewGroup){
         mAnchorVGroup = viewGroup;
+
     }
 
 
     /**
-     * 绑定控制界面到surfaceview
+     * 绑定控制视图到当前的自定义视图
      */
-    public void bindingContrlView(){
+    private void bindingContrlView(){
         if(mAnchorVGroup == null){
             return;
         }
+        mAnchorVGroup.removeView(this);
         FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
         );
         removeAllViews();
-
-        View view = createCtrlView();
-        addView(view, frameParams);
-
-        show(DEFAULTTIMEOUT);
+        if(mCtrlView == null){
+            createCtrlView();
+        }
+        addView(mCtrlView, frameParams);
     }
 
-    public void preLoadingAnimation(){
+
+    /**
+     * 绑定进度条到当前自定义视图
+     */
+    private void bindingProgressBar(){
+        if(mAnchorVGroup == null){
+            return;
+        }
+        mAnchorVGroup.removeView(this);
+        FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        removeAllViews();
+        if(mProgressView == null){
+            createProgessView();
+        }
+        addView(mProgressView, frameParams);
+    }
+
+    public void startLoadingAnimation(){
         if(mAnchorVGroup == null){
             return;
         }
@@ -145,12 +157,12 @@ public class JMediaControl extends FrameLayout {
                 ViewGroup.LayoutParams.MATCH_PARENT
         );
         removeAllViews();
-
-        View view = createLoadingAnimation();
-        addView(view, frameParams);
+        if(mLoadingView == null){
+            createLoadingAnimation();
+        }
+        addView(mLoadingView, frameParams);
         mAnchorVGroup.addView(this, frameParams);
         mLoadingAnimation.start();
-
     }
 
 
@@ -158,35 +170,50 @@ public class JMediaControl extends FrameLayout {
         if(mLoadingAnimation != null){
             mIsLoadingComplelte = true;
             mLoadingAnimation.stop();
-            mAnchorVGroup.removeView(this);
             mLoadingAnimation = null;
+            mLoadingView = null;
         }
     }
 
-    private View createLoadingAnimation(){
+    private void createProgessView(){
         LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        View view = inflater.inflate(R.layout.loading, null);
+        mProgressView = inflater.inflate(R.layout.progress, null);
 
-        ImageView loadingView = (ImageView)view.findViewById(R.id.loadingAnimation);
+        mProgressBar = (ProgressBar)mProgressView.findViewById(R.id.progress);
 
-        mLoadingAnimation = (AnimationDrawable)loadingView.getDrawable();
-
-        return view;
+        if(mProgressBar != null){
+            mProgressBar.setMax(MAX_PROGRESS);
+        }
     }
 
     /**
-     * 创建媒体蓝控制信息
+     * 创建启动画面视图view
+     * @return
+     */
+    private void createLoadingAnimation(){
+        LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+        mLoadingView  = inflater.inflate(R.layout.loading, null);
+
+        ImageView loadingView = (ImageView)mLoadingView.findViewById(R.id.loadingAnimation);
+
+        mLoadingAnimation = (AnimationDrawable)loadingView.getDrawable();
+
+    }
+
+    /**
+     * 创建媒体蓝控制信息view
      * @return
      */
     private View createCtrlView(){
         LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        mRootView = inflater.inflate(R.layout.controller, null);
+        mCtrlView = inflater.inflate(R.layout.controller, null);
 
-        initCtrView(mRootView);
+        initCtrView(mCtrlView);
 
-        return mRootView;
+        return mCtrlView;
     }
 
     /**
@@ -200,13 +227,13 @@ public class JMediaControl extends FrameLayout {
             mBtnFullscreen.setOnClickListener(mFullscreenListener);
         }
 
-        mProgress = (ProgressBar) view.findViewById(R.id.mediacontroller_progress);
-        if (mProgress != null) {
-            if (mProgress instanceof SeekBar) {
-                SeekBar seeker = (SeekBar) mProgress;
+        mSeekBar = (ProgressBar) view.findViewById(R.id.mediacontroller_progress);
+        if (mSeekBar != null) {
+            if (mSeekBar instanceof SeekBar) {
+                SeekBar seeker = (SeekBar) mSeekBar;
                 seeker.setOnSeekBarChangeListener(mSeekListener);
             }
-            mProgress.setMax(1000);
+            mSeekBar.setMax(MAX_PROGRESS);
         }
 
         mBtnPause = (ImageButton)view.findViewById(R.id.pause);
@@ -272,17 +299,16 @@ public class JMediaControl extends FrameLayout {
             show(3600000);
 
             mIsDragging = true;
-            mHandler.removeMessages(SHOW_PROGRESS);
+            mHandler.removeMessages(SHOW_SEEKBAR);
         }
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
             mIsDragging = false;
-            setProgress();
-            //updatePausePlay();
+            setProgress(mSeekBar);
             show(DEFAULTTIMEOUT);
 
-            mHandler.sendEmptyMessage(SHOW_PROGRESS);
+            mHandler.sendEmptyMessage(SHOW_SEEKBAR);
         }
     };
 
@@ -299,8 +325,39 @@ public class JMediaControl extends FrameLayout {
     }
 
     private void show(int timeout) {
-        if (!mIsShowing && mAnchorVGroup != null) {
-            setProgress();
+        if (!mIsCtlShowing && mAnchorVGroup != null) {
+            //先移除掉默认显示的进度条
+            if(mIsDefaultProgressShowing){
+                mAnchorVGroup.removeView(this);
+                mProgressView = null;
+                mIsDefaultProgressShowing = false;
+            }
+            addCtrViewToMediaView();
+        }
+
+        updateBtnPauseStatus();
+        mHandler.sendEmptyMessage(SHOW_SEEKBAR);
+
+        //暂停状态不掩藏进度条等
+        if(mIsPause && !mPlayerCtr.isComplete()){
+            return;
+        }else if(mPlayerCtr.isComplete()){      //结束时，跳转到暂停状态
+            mIsPause = true;
+        }
+        Message msg = mHandler.obtainMessage(FADE_OUT);
+        if (timeout != 0) {
+            mHandler.removeMessages(FADE_OUT);
+            mHandler.sendMessageDelayed(msg, timeout);
+        }
+    }
+
+    /**
+     * 添加控制视图
+     */
+    private void addCtrViewToMediaView(){
+        bindingContrlView();
+        if (mCtrlView != null) {
+            setProgress(mSeekBar);
             if (mBtnPause != null && mBtnPause1 != null) {
                 mBtnPause.requestFocus();
                 mBtnPause1.requestFocus();
@@ -314,19 +371,27 @@ public class JMediaControl extends FrameLayout {
             );
 
             mAnchorVGroup.addView(this, tlp);
-            mIsShowing = true;
+            mIsCtlShowing = true;
         }
+    }
 
-        mHandler.sendEmptyMessage(SHOW_PROGRESS);
+    /**
+     * 添加默认进度条显示
+     */
+    private void addDefaultProgessToMediaView(){
+        bindingProgressBar();
+        if (mAnchorVGroup != null && mProgressView != null) {
 
-        //暂停状态不掩藏进度条等
-        if(mIsPause && !mPlayerCtr.isComplete()){
-            return;
-        }
-        Message msg = mHandler.obtainMessage(FADE_OUT);
-        if (timeout != 0) {
-            mHandler.removeMessages(FADE_OUT);
-            mHandler.sendMessageDelayed(msg, timeout);
+            setProgress(mProgressBar);
+
+            FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.BOTTOM
+            );
+
+            mAnchorVGroup.addView(this, tlp);
+            mIsDefaultProgressShowing = true;
         }
     }
 
@@ -367,19 +432,23 @@ public class JMediaControl extends FrameLayout {
      * 设置seekBar进度条
      * @return
      */
-    private int setProgress(){
+    private void setProgress(ProgressBar progressBar){
         if(mPlayerCtr == null || mIsDragging){
-            return 0;
+            return;
         }
         int position = mPlayerCtr.getCurPosition();
         int duration = mPlayerCtr.getDuration();
-        if(mProgress != null){
+        if(progressBar != null){
             if(duration > 0){
                 long pos = 1000L * position / duration;
-                mProgress.setProgress((int)pos);                //拖拽的显示到进度条上去
+                progressBar.setProgress((int)pos);                //拖拽的显示到进度条上去
+            }
+            if(mIsDefaultProgressShowing){                          //默认显示下不在设计耳机
+                Log.i(TAG, "pos " + (1000L * position / duration));
+                return;
             }
             int percent = mPlayerCtr.getBufPercent();
-            mProgress.setSecondaryProgress(percent * 10);
+            progressBar.setSecondaryProgress(percent * 10);
         }
 
         //显示时间
@@ -390,10 +459,9 @@ public class JMediaControl extends FrameLayout {
             mCurTime.setText(stringForTime(position));
             if(mPlayerCtr.isComplete()){
                 mCurTime.setText(stringForTime(duration));
-                mProgress.setProgress(1000);
+                progressBar.setProgress(MAX_PROGRESS);
             }
         }
-        return position;
     }
 
     /**
@@ -414,7 +482,7 @@ public class JMediaControl extends FrameLayout {
         if(mPlayerCtr == null){
             return;
         }
-        if(mIsPause){
+        if(mIsPause || mPlayerCtr.isComplete()){
             mHandler.removeMessages(FADE_OUT);
             mBtnPause.setImageDrawable(getResources().getDrawable(R.drawable.ic_tv_play));
             mBtnPause1.setImageDrawable(getResources().getDrawable(R.drawable.ic_portrait_play));
@@ -423,7 +491,7 @@ public class JMediaControl extends FrameLayout {
             mBtnPause.setImageDrawable(getResources().getDrawable(R.drawable.ic_tv_stop));
             mBtnPause1.setImageDrawable(getResources().getDrawable(R.drawable.ic_portrait_stop));
         }
-        mHandler.sendEmptyMessage(SHOW_PROGRESS);
+        mHandler.sendEmptyMessage(SHOW_SEEKBAR);
     }
 
     /**
@@ -454,13 +522,16 @@ public class JMediaControl extends FrameLayout {
 
         try{
             mAnchorVGroup.removeView(this);
+            mCtrlView = null;
+            addDefaultProgessToMediaView();
             if(mHandler != null){
-                mHandler.removeMessages(SHOW_PROGRESS);
+                mHandler.removeMessages(SHOW_SEEKBAR);
+                mHandler.sendEmptyMessage(SHOW_PROGRESSBAR);
             }
         }catch (IllegalArgumentException ex){
             ex.printStackTrace();
         }
-        mIsShowing = false;
+        mIsCtlShowing = false;
     }
 
     @Override
@@ -477,8 +548,8 @@ public class JMediaControl extends FrameLayout {
             mBtnFullscreen.setEnabled(enabled);
         }
 
-        if(mProgress != null){
-            mProgress.setEnabled(enabled);
+        if(mSeekBar != null){
+            mSeekBar.setEnabled(enabled);
         }
         disableUnsupportedButtons();
         super.setEnabled(enabled);
@@ -498,7 +569,6 @@ public class JMediaControl extends FrameLayout {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        Log.i(TAG, "dispatchKeyEvent");
         if(mPlayerCtr == null){
             return true;
         }
@@ -581,6 +651,13 @@ public class JMediaControl extends FrameLayout {
 
         private void myHandlerMsg(JMediaControl control, Message msg){
             switch (msg.what){
+                case SHOW_PROGRESSBAR:
+                    control.setProgress(control.mProgressBar);
+                    if((!control.mIsCtlShowing) && (!control.mPlayerCtr.isComplete())){
+                        sendEmptyMessageDelayed(SHOW_PROGRESSBAR, 1000);
+                    }
+                    break;
+
                 case FADE_OUT:
                     if(!control.mPlayerCtr.isComplete()){
                         control.hide();
@@ -588,10 +665,10 @@ public class JMediaControl extends FrameLayout {
                     break;
 
                 //更新显示进度条
-                case SHOW_PROGRESS:
-                    control.setProgress();
-                    if(!control.mIsDragging && control.mIsShowing && !control.mPlayerCtr.isComplete()){
-                        msg = obtainMessage(SHOW_PROGRESS);
+                case SHOW_SEEKBAR:
+                    control.setProgress(control.mSeekBar);
+                    if(!control.mIsDragging && control.mIsCtlShowing && !control.mPlayerCtr.isComplete()){
+                        msg = obtainMessage(SHOW_SEEKBAR);
                         sendMessageDelayed(msg, 1500);
                     }
                     break;

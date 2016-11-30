@@ -51,11 +51,11 @@ public class MainActivity extends Activity {
         registerListener();
         jMediaControl.setmPlayerCtr(mPlayerControl);
         jMediaControl.setAnchorView(mSurfaceContainer);
-        jMediaControl.preLoadingAnimation();
+        jMediaControl.startLoadingAnimation();
                                                              //开始加载动画
         try {
             mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mPlayer.setDataSource(this, Uri.parse("http://220.165.142.145/vhotwsh.video.qq.com/flv/71/210/d00228v6kza.p412.1.mp4?sdtfrom=v1000&type=mp4&vkey=72B219170307F693D81B60CF24F816F2B84A6438C681952AC3658CB045BBA09CEA2DEF492E1EF2E8E92326738726D11CBAFFF55E308977527E80705B1D949B861B5A4D2724E7E36CB6A39FCB44BF6344DC6D4CE6198747F20440712DD87CA927F71D6AE9B3781E2E4EB2DEC337CC87DF&level=0&platform=11&br=85&fmt=hd&sp=0&guid=FE16D50EED1A35AF9D11263EC8661E33&wshc_tag=2&wsiphost=ipdbm"));
+            mPlayer.setDataSource(this, Uri.parse("http://vhoth.dnion.videocdn.qq.com/flv/208/111/n0022eqlx0s.p412.1.mp4?sdtfrom=v1080&type=mp4&vkey=5831B97B9D1AB6A861E9846D42E76FB2946A4EEFC6699E7E347CBD808A157DA486410B17CCFEC6AC6A936A3151FC73D3E22A9E0F3E1995382E7BB89A7014993DF36033F81830784F36736B2647592810A19D40BED15E4DA54AC279B9E3DC665A87B450C1F1CAAC25615B14ECBF05F89A680D537361F89916&level=0&platform=11&br=84&fmt=hd&sp=0&guid=E484A66A72C236C9ECEBB9DBC54C6D268057BFF2"));
             mPlayer.setOnPreparedListener(mPreParedListener);
             mPlayer.setOnBufferingUpdateListener(mBufferListener);
             mPlayer.setOnCompletionListener(mOnCompletionListener);
@@ -63,7 +63,6 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
 
@@ -71,7 +70,6 @@ public class MainActivity extends Activity {
         @Override
         public void surfaceCreated(SurfaceHolder surfaceHolder) {
             mPlayer.setDisplay(surfaceHolder);
-
         }
 
         @Override
@@ -90,11 +88,11 @@ public class MainActivity extends Activity {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
                 jMediaControl.stopLoadingAnimation();
-                jMediaControl.bindingContrlView();
+                jMediaControl.show();
                 mPlayer.start();
                 mPlayer.pause();
             }
-        };
+};
 
         mBufferListener = new MediaPlayer.OnBufferingUpdateListener() {
             @Override
@@ -114,6 +112,7 @@ public class MainActivity extends Activity {
         mPlayerControl = new JMediaControl.ControlOper() {
             @Override
             public void start() {
+                IsComplete = false;
                 mPlayer.start();
             }
 
