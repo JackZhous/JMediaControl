@@ -1,3 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<items version="2" />
+<items version="2" >
 
+    <item
+        jar="F:\mine\JMediaController\JMediaControl\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.1.0\jars\libs\internal_impl-23.1.0.jar"
+        jumboMode="false"
+        revision="23.0.3"
+        sha1="8716243bf04bae8d6c9ca94d27b9a9be7236f0a3">
+        <dex dex="F:\mine\JMediaController\JMediaControl\app\build\intermediates\pre-dexed\debug\internal_impl-23.1.0_6d56643f442ec19c7f870f60bf3d35085993d0c8.jar" />
+    </item>
+    <item
+        jar="F:\mine\JMediaController\JMediaControl\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.1.0\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.3"
+        sha1="ddde541c289c8b816a8f8fd6c325d80788c522a6">
+        <dex dex="F:\mine\JMediaController\JMediaControl\app\build\intermediates\pre-dexed\debug\com.android.support-support-v4-23.1.0_51d9a9bd643f30322951f336ebf658b2fbacc790.jar" />
+    </item>
+    <item
+        jar="F:\mine\JMediaController\JMediaControl\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\23.1.0\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.3"
+        sha1="57ae0d750ff83f0c738d21720224ac7ea866a094">
+        <dex dex="F:\mine\JMediaController\JMediaControl\app\build\intermediates\pre-dexed\debug\com.android.support-appcompat-v7-23.1.0_f96ee65d069eebc7e97fe215c5753a4eda376638.jar" />
+    </item>
+    <item
+        jar="E:\androidstudio\as_sdk_lite\extras\android\m2repository\com\android\support\support-annotations\23.1.0\support-annotations-23.1.0.jar"
+        jumboMode="false"
+        revision="23.0.3"
+        sha1="92e3fc113ec3ee36b64603a38857b95700025633">
+        <dex dex="F:\mine\JMediaController\JMediaControl\app\build\intermediates\pre-dexed\debug\support-annotations-23.1.0_8ebc6aa06c4109177fd1ce1199901137bb631ce8.jar" />
+    </item>
+
+</items>

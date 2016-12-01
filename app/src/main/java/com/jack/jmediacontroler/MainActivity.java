@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
                                                              //开始加载动画
         try {
             mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mPlayer.setDataSource(this, Uri.parse("http://vhoth.dnion.videocdn.qq.com/flv/208/111/n0022eqlx0s.p412.1.mp4?sdtfrom=v1080&type=mp4&vkey=5831B97B9D1AB6A861E9846D42E76FB2946A4EEFC6699E7E347CBD808A157DA486410B17CCFEC6AC6A936A3151FC73D3E22A9E0F3E1995382E7BB89A7014993DF36033F81830784F36736B2647592810A19D40BED15E4DA54AC279B9E3DC665A87B450C1F1CAAC25615B14ECBF05F89A680D537361F89916&level=0&platform=11&br=84&fmt=hd&sp=0&guid=E484A66A72C236C9ECEBB9DBC54C6D268057BFF2"));
+            mPlayer.setDataSource(this, Uri.parse("http://vhotlx.video.qq.com/flv/239/219/v0022r701ho.p412.1.mp4?sdtfrom=v1000&type=mp4&vkey=1E7468BBBF7A725EBBA3445A7E5F84E2A3A5BB39644834A307B371D233CEB794F32B917FAB48E14CF72E9E184850B2E7DF537741FFE68022BF265592EA85028B52A7E7BEC00271584C83D852BC2416D4F24A44AEA82C49FC61143A8EE1AA6148470504F9AE6869DC5628D977F8909E71&level=0&platform=11&br=84&fmt=hd&sp=0&guid=FE16D50EED1A35AF9D11263EC8661E33"));
             mPlayer.setOnPreparedListener(mPreParedListener);
             mPlayer.setOnBufferingUpdateListener(mBufferListener);
             mPlayer.setOnCompletionListener(mOnCompletionListener);
