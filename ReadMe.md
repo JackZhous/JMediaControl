@@ -1,8 +1,34 @@
+[![](https://jitpack.io/v/JackZhous/JMediaControl.svg)](https://jitpack.io/#JackZhous/JMediaControl)
+
 # 一款自定义的MediaControl组件，替换Android系统自带的控制组件，控制视频播放、快进、暂停等功能
 ## 效果图
 ![show](demo.gif)
 
 ## 使用方法
+
+### 导入：
+#### step 1:
+在项目根目录下的build.gradle添加
+```
+	allprojects {
+		repositories {
+			...
+			maven { url 'https://jitpack.io' }
+		}
+	}
+```
+
+#### step 2:
+添加项目依赖
+```
+	dependencies {
+	        compile 'com.github.JackZhous:JMediaControl:v1.0'
+	}
+
+```
+
+### 代码调用：
+
 1. 实现自定义组件必须的接口ControlOper,接口内部逻辑自己实现，该接口功能主要用于完成播放、快进和全屏等功能
 ```java
 public interface ControlOper {
