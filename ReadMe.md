@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/JackZhous/JMediaControl.svg)](https://jitpack.io/#JackZhous/JMediaControl)
+[![](https://www.jitpack.io/v/JackZhous/JMediaControl.svg)](https://www.jitpack.io/#JackZhous/JMediaControl)
 
 # 一款自定义的MediaControl组件，替换Android系统自带的控制组件，控制视频播放、快进、暂停等功能
 ## 效果图
@@ -22,7 +22,7 @@
 添加项目依赖
 ```
 	dependencies {
-	        compile 'com.github.JackZhous:JMediaControl:v1.0'
+	        compile 'com.github.JackZhous:JMediaControl:v1.1'
 	}
 
 ```
