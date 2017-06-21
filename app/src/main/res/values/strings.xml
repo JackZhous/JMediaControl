@@ -12,5 +12,5 @@
 <resources>
     <string name="app_name">JMediaControler</string>
     <string name="description">JMediaControler</string>
-    <string name="loading">加载中......</string>
+
 </resources>

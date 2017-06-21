@@ -13,8 +13,8 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
-import com.jack.jmediacontroler.utils.DensityUtil;
-import com.jack.jmediacontroler.view.JMediaControl;
+import com.jackzhous.label.utils.DensityUtil;
+import com.jackzhous.label.view.JMediaControl;
 
 import java.io.IOException;
 
@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
                                                              //开始加载动画
         try {
             mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mPlayer.setDataSource(this, Uri.parse("http://vhotlx.video.qq.com/flv/239/219/v0022r701ho.p412.1.mp4?sdtfrom=v1000&type=mp4&vkey=1E7468BBBF7A725EBBA3445A7E5F84E2A3A5BB39644834A307B371D233CEB794F32B917FAB48E14CF72E9E184850B2E7DF537741FFE68022BF265592EA85028B52A7E7BEC00271584C83D852BC2416D4F24A44AEA82C49FC61143A8EE1AA6148470504F9AE6869DC5628D977F8909E71&level=0&platform=11&br=84&fmt=hd&sp=0&guid=FE16D50EED1A35AF9D11263EC8661E33"));
+            mPlayer.setDataSource(this, Uri.parse("http://183.222.103.8/cache/117.157.18.19/sports.tc.qq.com/s0024dqu1ip.p412.1.mp4?sdtfrom=v1010&guid=6b2b00332a10d6b4f24d1af42348cf69&vkey=B302EA1FE12BAEDC50AA5C123D7ACBD2F2236A20E4163D1923CC7AFD8C597D6FA2D9B6D3E63779EBC1F3E0B4027BD6804594FB126249DE6E90A20FC4DD1F5EE7428974BEE40D029345229FA149C201FDE600A2F7A38277E41DEDF9B56A1E39ABBB434DD42C05207F7731A50BDE9DBEF0&ich_args2=314-21101702062387_fff60d428ec0d5d8e8f530cb4913e813_10004421_9c886d24d7c2f0d59432518939a83798_6bc7f327a4070a18170bf4d8ffb13cb8"));
             mPlayer.setOnPreparedListener(mPreParedListener);
             mPlayer.setOnBufferingUpdateListener(mBufferListener);
             mPlayer.setOnCompletionListener(mOnCompletionListener);
